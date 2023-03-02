@@ -74,6 +74,11 @@ namespace Unity.Robotics.ROSTCPConnector
 
         internal void OnMessageReceived(byte[] data)
         {
+            if (MessageDownstreamRateCalculator.Shared is MessageDownstreamRateCalculator calc)
+            {
+                calc.AddByte((ulong)data.Length);
+            }
+
             m_LastMessageReceivedRealtime = Time.realtimeSinceStartup;
             if (m_IsRosService && m_ServiceResponseTopic != null)
             {

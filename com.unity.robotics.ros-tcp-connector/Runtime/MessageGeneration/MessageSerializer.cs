@@ -40,7 +40,7 @@ namespace Unity.Robotics.ROSTCPConnector.MessageGeneration
             m_ListOfSerializations.Clear();
         }
 
-        public void SerializeMessageWithLength(Message message)
+        public int SerializeMessageWithLength(Message message)
         {
             // insert a gap to put the length into
             int lengthIndex = m_ListOfSerializations.Count;
@@ -51,7 +51,9 @@ namespace Unity.Robotics.ROSTCPConnector.MessageGeneration
             SerializeMessage(message);
 
             // fill in the gap, now that we know the length
-            m_ListOfSerializations[lengthIndex] = BitConverter.GetBytes(Length - preambleLength);
+            var messageLen = Length - preambleLength;
+            m_ListOfSerializations[lengthIndex] = BitConverter.GetBytes(messageLen);
+            return messageLen;
         }
 
         public void SerializeMessage(Message message)
@@ -89,10 +91,15 @@ namespace Unity.Robotics.ROSTCPConnector.MessageGeneration
             return result;
         }
 
-        public void SendTo(System.IO.Stream stream)
+        public ulong SendTo(System.IO.Stream stream)
         {
+            ulong length = 0;
             foreach (byte[] statement in m_ListOfSerializations)
+            {
                 stream.Write(statement, 0, statement.Length);
+                length += (ulong)statement.Length;
+            }
+            return length;
         }
 
         // Alignment, offset, padding

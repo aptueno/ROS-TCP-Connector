@@ -112,9 +112,16 @@ namespace Unity.Robotics.ROSTCPConnector
             messageSerializer.Clear();
             //Prepare the data to send.
             messageSerializer.Write(TopicName);
-            messageSerializer.SerializeMessageWithLength(message);
+            //messageSerializer.SerializeMessageWithLength(message);
+            var length = messageSerializer.SerializeMessageWithLength(message);
             //Send via the stream.
             messageSerializer.SendTo(stream);
+            //var length = messageSerializer.SendTo(stream);
+
+            if (MessageUpstreamRateCalculator.Shared is MessageUpstreamRateCalculator calc)
+            {
+                calc.AddByte((ulong)length);
+            }
         }
 
         public void PrepareLatchMessage()
