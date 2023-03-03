@@ -1,7 +1,9 @@
+using Codice.CM.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.UI.CanvasScaler;
 
 namespace Unity.Robotics.ROSTCPConnector
 {
@@ -12,7 +14,7 @@ namespace Unity.Robotics.ROSTCPConnector
         public delegate void DataSpeedCalculatorDelegate(UInt64 dataSize, double bitsPerSec, string unit);
         public event DataSpeedCalculatorDelegate OnCalculateSpeed;
 
-        public enum RefreshTarget : int
+        public enum TargetRate : int
         {
             [InspectorName("1 Hz")]
             _1 = 1,
@@ -23,19 +25,27 @@ namespace Unity.Robotics.ROSTCPConnector
             [InspectorName("8 Hz")]
             _8 = 8
         }
-        public RefreshTarget RefreshRate = RefreshTarget._1;
-        private RefreshTarget? _RefreshRate;
+        public TargetRate RefreshRate = TargetRate._1;
+        private TargetRate? _RefreshRate;
+
+        public TargetRate OutputRate = TargetRate._1;
+        private TargetRate? _OutputRate;
 
         private UInt64 SplitSize => (UInt64)RefreshRate;
-        private float refreshInverval;
         private UInt64[] dataSizeBuffer = new UInt64[1];
         private int bufferIndex = 0;
 
-        public UInt64 DataSize = 0;
-        public double DataSpeed = 0;
-        public string DataSpeedUnit = "bps";
+        [SerializeField]
+        private UInt64 dataSize = 0;
+        [SerializeField]
+        private double dataSpeed = 0;
+        [SerializeField]
+        private string dataSpeedUnit = "bps";
 
-        private float currentTime = 0f;
+        private float calcCurrentTime = 0f;
+        private float calcRefreshInverval;
+        private float outputCurrentTime = 0f;
+        private float outputRefreshInverval;
 
         private object dataLock = new object();
 
@@ -63,36 +73,46 @@ namespace Unity.Robotics.ROSTCPConnector
         {
             if (_RefreshRate != RefreshRate)
             {
-                
-                currentTime = 0;
-                refreshInverval = 1f / (float)RefreshRate;
+                calcCurrentTime = 0;
+                calcRefreshInverval = 1f / (float)RefreshRate;
                 bufferIndex = 0;
                 lock (dataLock)
                 {
                     _RefreshRate = RefreshRate;
                     dataSizeBuffer = new UInt64[SplitSize];
                 }
-            } 
+            }
 
-            currentTime += Time.deltaTime;
-
-            if (currentTime >= refreshInverval)
+            if (_OutputRate != OutputRate)
             {
-                currentTime -= refreshInverval;
-                UInt64 size;
+                _OutputRate = OutputRate;
+                outputCurrentTime = 0;
+                outputRefreshInverval = 1f / (float)OutputRate;
+            }
+
+            var time = Time.deltaTime;
+            calcCurrentTime += time;
+            outputCurrentTime += time;
+
+            if (calcCurrentTime >= calcRefreshInverval)
+            {
+                calcCurrentTime -= calcRefreshInverval;
                 lock (dataLock)
                 {
-                    size = dataSizeBuffer[bufferIndex] * SplitSize;
+                    dataSize = dataSizeBuffer[bufferIndex] * SplitSize;
                     dataSizeBuffer[bufferIndex] = 0;
                     bufferIndex += 1;
                     if (bufferIndex >= dataSizeBuffer.Length) bufferIndex = 0;
                 }
-                DataSize = size;
-                var (speed, unit) = CalculateDataSpeed(size);
-                DataSpeed = speed;
-                DataSpeedUnit = unit;
-                OnCalculateSpeed?.Invoke(size, speed, unit);
-                
+                var (speed, unit) = CalculateDataSpeed(dataSize);
+                dataSpeed = speed;
+                dataSpeedUnit = unit;
+            }
+
+            if (outputCurrentTime >= outputRefreshInverval)
+            {
+                outputCurrentTime -= outputRefreshInverval;
+                OnCalculateSpeed?.Invoke(dataSize, dataSpeed, dataSpeedUnit);
             }
         }
 
@@ -116,6 +136,21 @@ namespace Unity.Robotics.ROSTCPConnector
                     dataSizeBuffer[i] += size;
                 }
             }
+        }
+
+        public UInt64 GetDataSize()
+        {
+            return dataSize;
+        }
+
+        public double GetDataSpeed()
+        {
+            return dataSpeed;
+        }
+
+        public string GetDataSpeedUnit()
+        {
+            return dataSpeedUnit;
         }
 
         private (double, string) CalculateDataSpeed(UInt64 value)
