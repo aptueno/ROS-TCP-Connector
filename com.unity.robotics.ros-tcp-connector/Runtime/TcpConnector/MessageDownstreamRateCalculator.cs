@@ -7,18 +7,33 @@ namespace Unity.Robotics.ROSTCPConnector
 {
     public class MessageDownstreamRateCalculator : MonoBehaviour
     {
-        private const float INTERVAL = 1.0f;
-
         public static MessageDownstreamRateCalculator Shared { private set; get; }
 
         public delegate void DataSpeedCalculatorDelegate(UInt64 dataSize, double bitsPerSec, string unit);
         public event DataSpeedCalculatorDelegate OnCalculateSpeed;
 
+        public enum RefreshTarget : int
+        {
+            [InspectorName("1 Hz")]
+            _1 = 1,
+            [InspectorName("2 Hz")]
+            _2 = 2,
+            [InspectorName("4 Hz")]
+            _4 = 4,
+            [InspectorName("8 Hz")]
+            _8 = 8
+        }
+        public RefreshTarget RefreshRate = RefreshTarget._1;
+        private RefreshTarget? _RefreshRate;
+
+        private UInt64 SplitSize => (UInt64)RefreshRate;
+        private float refreshInverval;
+        private UInt64[] dataSizeBuffer = new UInt64[1];
+        private int bufferIndex = 0;
+
         public UInt64 DataSize = 0;
         public double DataSpeed = 0;
         public string DataSpeedUnit = "bps";
-
-        private UInt64 dataSize = 0;
 
         private float currentTime = 0f;
 
@@ -46,37 +61,60 @@ namespace Unity.Robotics.ROSTCPConnector
         // Update is called once per frame
         void Update()
         {
-            currentTime += Time.deltaTime;
-
-            if (currentTime >= INTERVAL)
+            if (_RefreshRate != RefreshRate)
             {
-                currentTime -= INTERVAL;
+
+                currentTime = 0;
+                refreshInverval = 1f / (float)RefreshRate;
+                bufferIndex = 0;
                 lock (dataLock)
                 {
-                    DataSize = dataSize;
-                    dataSize = 0;
+                    _RefreshRate = RefreshRate;
+                    dataSizeBuffer = new UInt64[SplitSize];
                 }
-                var (speed, unit) = CalculateDataSpeed(DataSize);
+            }
+
+            currentTime += Time.deltaTime;
+
+            if (currentTime >= refreshInverval)
+            {
+                currentTime -= refreshInverval;
+                UInt64 size;
+                lock (dataLock)
+                {
+                    size = dataSizeBuffer[bufferIndex] * SplitSize;
+                    dataSizeBuffer[bufferIndex] = 0;
+                    bufferIndex += 1;
+                    if (bufferIndex >= dataSizeBuffer.Length) bufferIndex = 0;
+                }
+                DataSize = size;
+                var (speed, unit) = CalculateDataSpeed(size);
                 DataSpeed = speed;
                 DataSpeedUnit = unit;
-                OnCalculateSpeed?.Invoke(DataSize, speed, unit);
+                OnCalculateSpeed?.Invoke(size, speed, unit);
 
             }
         }
 
         public void AddBit(UInt64 bitSize)
         {
-            lock (dataLock)
-            {
-                dataSize += bitSize;
-            }
+            SetBuffer(bitSize);
         }
 
         public void AddByte(UInt64 byteSize)
         {
+            SetBuffer(byteSize * 8);
+        }
+
+        private void SetBuffer(UInt64 bitSize)
+        {
             lock (dataLock)
             {
-                dataSize += byteSize * 8;
+                var size = bitSize / SplitSize;
+                for (int i = 0; i < dataSizeBuffer.Length; i++)
+                {
+                    dataSizeBuffer[i] += size;
+                }
             }
         }
 

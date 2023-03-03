@@ -384,6 +384,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d91a67a53abebea4093e7bc150c9274b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RefreshRate: 2
   DataSize: 0
   DataSpeed: 0
   DataSpeedUnit: bps
@@ -447,6 +448,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cca721fea4967774ca9fbfd35d202da6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RefreshRate: 2
   DataSize: 0
   DataSpeed: 0
   DataSpeedUnit: bps
