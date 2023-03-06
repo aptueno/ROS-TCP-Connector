@@ -113,15 +113,24 @@ namespace Unity.Robotics.ROSTCPConnector
             s_HUDTabs.Add(index, tab);
         }
 
-        public static void RegisterHeader(Action headerContent, int index = 0)
+        public static int RegisterHeader(Action headerContent, int index = 0)
         {
             if (s_HeaderContents.ContainsKey(index))
             {
                 Debug.LogWarning($"HUDPanel already contains a header registered at index {index}! Registering at index {s_HeaderContents.Count} instead.");
-                index = s_HeaderContents.Count;
+                index = s_HeaderContents.Count-1;
             }
 
             s_HeaderContents.Add(index, headerContent);
+
+            return index;
+        }
+
+        public static void UnregisterHeader(int index)
+        {
+            if (s_HeaderContents.ContainsKey(index)) {
+                s_HeaderContents.Remove(index);
+            }
         }
 
         public static void AddWindow(HudWindow window)

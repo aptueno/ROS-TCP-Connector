@@ -64,6 +64,7 @@ namespace Unity.Robotics.ROSTCPConnector
         // GUI window variables
         internal HudPanel m_HudPanel = null;
         public HudPanel HUDPanel => m_HudPanel;
+        int m_HudHeaderIndex;
 
         class OutgoingMessageQueue
         {
@@ -481,13 +482,18 @@ namespace Unity.Robotics.ROSTCPConnector
         {
             InitializeHUD();
 
-            HudPanel.RegisterHeader(DrawHeaderGUI);
+            m_HudHeaderIndex = HudPanel.RegisterHeader(DrawHeaderGUI);
 
             if (listenForTFMessages)
                 TFSystem.GetOrCreateInstance();
 
             if (ConnectOnStart)
                 Connect();
+        }
+
+        void OnDestroy()
+        {
+            HudPanel.UnregisterHeader(m_HudHeaderIndex);
         }
 
         public void Connect(string ipAddress, int port)
