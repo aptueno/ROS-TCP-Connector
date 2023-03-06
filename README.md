@@ -6,6 +6,14 @@
 ![ROS](https://img.shields.io/badge/ros2-foxy,galactic-brightgreen)
 ![Unity](https://img.shields.io/badge/unity-2020.2+-brightgreen)
 
+# Forked Repository
+
+## Installation by Package Manager
+
+```
+https://github.com/aptueno/ROS-TCP-Connector.git?path=/com.unity.robotics.ros-tcp-connector#check_dataspeed
+```
+
 ---
 
 We're currently working on lots of things! Please take a short moment fill out our [survey](https://unitysoftware.co1.qualtrics.com/jfe/form/SV_0ojVkDVW0nNrHkW) to help us identify what products and packages to build next.

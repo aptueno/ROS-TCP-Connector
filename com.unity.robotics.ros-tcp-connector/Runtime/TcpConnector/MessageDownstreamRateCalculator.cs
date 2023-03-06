@@ -24,7 +24,7 @@ namespace Unity.Robotics.ROSTCPConnector
             [InspectorName("8 Hz")]
             _8 = 8
         }
-        public TargetRate RefreshRate = TargetRate._1;
+        public TargetRate RefreshRate = TargetRate._2;
         private TargetRate? _RefreshRate;
 
         public TargetRate OutputRate = TargetRate._1;
