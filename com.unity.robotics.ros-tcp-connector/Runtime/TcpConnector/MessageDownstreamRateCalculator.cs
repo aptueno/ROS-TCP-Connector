@@ -160,19 +160,19 @@ namespace Unity.Robotics.ROSTCPConnector
             }
             else if (dValue < Math.Pow(1024, 2) * 10)
             {
-                return (Math.Round(dValue / 1024) / 10, "Kbps");
+                return (Math.Round(dValue / 1000) / 10, "Kbps");
+            }
+            else if (dValue < Math.Pow(1024, 3) * 10)
+            {
+                return (Math.Round(dValue / Math.Pow(1000, 2)) / 10, "Mbps");
             }
             else if (dValue < Math.Pow(1024, 4) * 10)
             {
-                return (Math.Round(dValue / Math.Pow(1024, 2)) / 10, "Mbps");
+                return (Math.Round(dValue / Math.Pow(1000, 3)) / 10, "Gbps");
             }
             else if (dValue < Math.Pow(1024, 5) * 10)
             {
-                return (Math.Round(dValue / Math.Pow(1024, 3)) / 10, "Gbps");
-            }
-            else if (dValue < Math.Pow(1024, 6) * 10)
-            {
-                return (Math.Round(dValue / Math.Pow(1024, 4)) / 10, "Tbps");
+                return (Math.Round(dValue / Math.Pow(1000, 4)) / 10, "Tbps");
             }
             else
             {
